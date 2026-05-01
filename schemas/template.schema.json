@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meet-criteria.dev/schemas/template.schema.json",
+  "title": "Meet Criteria Template",
+  "description": "Estrutura canônica de um template de entregável (feature, mudanca, conceito).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "version", "label", "layout", "structure"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "type": {
+      "description": "Tipo de tarefa que o template descreve.",
+      "enum": ["feature", "mudanca", "conceito"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "SemVer do template."
+    },
+    "label": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "layout": { "$ref": "#/$defs/layout" },
+    "structure": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/structureNode" }
+    },
+    "checks": { "$ref": "#/$defs/checks" }
+  },
+  "$defs": {
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["horizontal-columns", "vertical-stack", "grid"] },
+        "gap": { "type": "number", "minimum": 0 },
+        "padding": { "type": "number", "minimum": 0 },
+        "background": { "type": "string" }
+      }
+    },
+    "componentName": {
+      "enum": [
+        "ContextMacro",
+        "ProblemStatement",
+        "FlowList",
+        "Flow",
+        "SectionHeader",
+        "ScreenSlot",
+        "Comparative",
+        "DecisionCriteria",
+        "AnchorBox",
+        "FinalAnalysis"
+      ]
+    },
+    "structureNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "component"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "Slug kebab-case único dentro do template."
+        },
+        "component": { "$ref": "#/$defs/componentName" },
+        "required": { "type": "boolean" },
+        "props": { "type": "object" },
+        "supportsRichText": { "type": "boolean" },
+        "supportsHierarchy": { "type": "boolean" },
+        "minCount": { "type": "integer", "minimum": 0 },
+        "maxCount": { "type": "integer", "minimum": 1 },
+        "minScreens": { "type": "integer", "minimum": 0 },
+        "maxScreens": { "type": "integer", "minimum": 1 },
+        "sections": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "itemTemplate": { "$ref": "#/$defs/itemTemplate" }
+      }
+    },
+    "itemTemplate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component"],
+      "properties": {
+        "component": { "$ref": "#/$defs/componentName" },
+        "props": { "type": "object" }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deterministic": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}
