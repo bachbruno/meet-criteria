@@ -133,11 +133,13 @@ Se `exit code !== 0`, reporte o `stderr` ao designer e pare. Erros típicos:
 
 > **Nota:** Por isso o Passo 6 vem DEPOIS do Passo 7 lá embaixo na execução real. A ordem na skill é didática (CLI vs. container), mas em runtime: pré-checagem → tipo → ticket → problem-statement → estrutura → identidade visual → container (Passo 7) → CLI (Passo 6) → renderização (Passo 8) → validação (Passo 8.5).
 
-## Passo 7 — Frame container com as telas em ordem
+## Passo 7 — Frame container com auto layout
 
 **Antes** de renderizar o template, peça ao designer:
 
-> Crie um frame (ou section) no Figma chamado, por exemplo, `MC Source — <ticketRef>`, arraste pra dentro dele as telas que devem entrar no entregável **na ordem desejada** (esquerda→direita ou de cima pra baixo no painel de camadas — o que importa é a ordem do `children[]`), e cole aqui o link desse frame.
+> Crie um **frame** (não section) no Figma chamado, por exemplo, `MC Source — <ticketRef>`, ative **auto layout** (`Shift+A`) com direção horizontal ou vertical, arraste pra dentro dele as telas **na ordem desejada**, e cole aqui o link desse frame.
+
+> **Por que frame com auto layout (e não section)?** Section só agrupa visualmente — o `children[]` no painel de camadas pode não bater com a ordem visual no canvas, e isso entra silenciosamente errado no manifest. Frame com auto layout força `children[]` a refletir a ordem visual: arrastar reordena ambos juntos, e quem renderiza tem garantia da ordem certa.
 
 Aguarde a URL. Extraia o `node-id` do query string. O Figma usa duas codificações intercambiáveis (`3-14266` e `3:14266`) — normalize trocando `-` por `:`.
 
@@ -149,7 +151,7 @@ if (!nodeIdRaw) throw new Error('Link sem ?node-id=. Peça pro designer copiar v
 const containerId = nodeIdRaw.replace(/-/g, ':')
 ```
 
-Depois rode `figma_execute` curto pra ler o container e capturar `id` + `name` de cada filho em ordem:
+Depois rode `figma_execute` curto pra ler o container, validar que é frame com auto layout, e capturar `id` + `name` de cada filho em ordem:
 
 ```js
 await figma.loadAllPagesAsync()
@@ -159,9 +161,16 @@ if (!('children' in container)) return { error: 'Nó não tem children (precisa 
 return {
   containerName: container.name,
   containerType: container.type,
+  layoutMode: 'layoutMode' in container ? container.layoutMode : null, // 'HORIZONTAL' | 'VERTICAL' | 'NONE'
   selection: container.children.map(c => ({ id: c.id, name: c.name })),
 }
 ```
+
+**Validações em ordem (pare na primeira falha):**
+
+1. **Tipo:** se `containerType !== 'FRAME'`, peça pro designer trocar pra frame: "Section/Group não preserva a ordem visual no `children[]`. Converta em frame (Right-click → Frame selection) e me mande o link de novo."
+2. **Auto layout:** se `layoutMode === 'NONE'` ou `null`, peça: "Frame está sem auto layout — `children[]` pode não bater com a ordem visual. Selecione o frame e aperte `Shift+A` (horizontal) ou `Shift+A` duas vezes (vertical), e me confirme."
+3. **Ordem visual (rede de segurança):** mesmo com frame+auto-layout, tire um screenshot do container pra confirmar visualmente. Use `figma_take_screenshot({ nodeId: containerId })` ou `figma_capture_screenshot`. Olhe a imagem e confirme que a ordem do array `selection` corresponde à ordem que o designer pretendia (esq→dir pra horizontal, cima→baixo pra vertical). Se houver discrepância (raríssimo com auto layout, comum em section/group), reporte ao designer com os nomes em ordem detectada e peça correção.
 
 Use `selection` direto como `inputs.selection` no Passo 6 — o CLI extrai `selectionIds` e `selectionNames` automaticamente. Os nomes vão aparecer nas tags acima de cada tela.
 
@@ -171,8 +180,6 @@ Valide a contagem:
 - `conceito`: `selection.length === variants.length`.
 
 Se a contagem não bate, reporte exatamente o gap e peça pro designer adicionar/remover telas do frame e mandar o link de novo (a URL não muda, mas o `children[]` sim).
-
-> **Por que frame container e não `figma_get_selection`?** O frame é um lugar canônico de curadoria, deixa a ordem explícita no painel de camadas (arrastar pra reordenar), evita pegar tela errada de uma página com material exploratório, e a URL é a única coisa que o designer precisa colar — sem comandos do tipo "shift-click na ordem certa".
 
 ## Passo 8 — Renderizar via figma_execute
 
