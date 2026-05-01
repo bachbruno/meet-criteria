@@ -24,7 +24,7 @@
 //   stderr: warnings (ex: identity auto sem overrides) + summary final humano
 
 import { resolve } from 'node:path'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeSync } from 'node:fs'
 import { normalizeTicketSlug } from '../lib/slug.mjs'
 import { loadTemplate, TemplateLoadError } from '../lib/template-loader.mjs'
 import { resolveIdentity, VisualIdentityError } from '../lib/visual-identity.mjs'
@@ -146,11 +146,10 @@ function main() {
   }
 
   const payload = JSON.stringify(output, null, 2) + '\n'
-  if (!process.stdout.write(payload)) {
-    process.stdout.once('drain', () => process.exit(0))
-  } else {
-    process.exit(0)
-  }
+  // writeSync evita truncamento por race entre stdout buffer e process.exit
+  // (com payloads grandes — typical do --with-render-js que pode passar 10KB).
+  writeSync(1, payload)
+  process.exit(0)
 }
 
 main()
