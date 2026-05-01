@@ -29,6 +29,7 @@ import { normalizeTicketSlug } from '../lib/slug.mjs'
 import { loadTemplate, TemplateLoadError } from '../lib/template-loader.mjs'
 import { resolveIdentity, VisualIdentityError } from '../lib/visual-identity.mjs'
 import { buildRenderManifest, RenderInputError } from '../lib/render-manifest.mjs'
+import { TokenNotFoundError } from '../lib/visual-tokens.mjs'
 import { bootstrapLocalStore } from '../lib/local-store.mjs'
 
 function parseArgs(argv) {
@@ -109,6 +110,7 @@ function main() {
     manifest = buildRenderManifest({ template, identity, slug, ticketRef, createdAt, inputs })
   } catch (err) {
     if (err instanceof RenderInputError) fail(err.message, 1)
+    if (err instanceof TokenNotFoundError) fail(`Token visual desconhecido: ${err.tokenName}`, 1)
     throw err
   }
 

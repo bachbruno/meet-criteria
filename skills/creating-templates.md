@@ -150,8 +150,9 @@ const MANIFEST = __MANIFEST__
 const SELECTION = __SELECTION_IDS__
 
 // 1. Carrega todas as fonts antes de criar texto (figma-use regra 2).
-await figma.loadFontAsync({ family: 'Inter', style: 'Regular' })
-await figma.loadFontAsync({ family: 'Inter', style: 'Bold' })
+const FONT_FAMILY = MANIFEST.tokens['font.family.default'] ?? 'Inter'
+await figma.loadFontAsync({ family: FONT_FAMILY, style: 'Regular' })
+await figma.loadFontAsync({ family: FONT_FAMILY, style: 'Bold' })
 
 // 2. Cria/seleciona page nova (figma-use regra 3a).
 await figma.loadAllPagesAsync()
