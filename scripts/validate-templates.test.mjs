@@ -32,3 +32,12 @@ test('arquivo inexistente devolve erro de IO', () => {
   assert.equal(result.valid, false)
   assert.match(result.errors[0].message, /ENOENT|not found|no such file/i)
 })
+
+const templatesDir = join(here, '..', 'templates')
+
+for (const name of ['feature', 'mudanca', 'conceito']) {
+  test(`templates/${name}.jsonc é válido contra o schema`, () => {
+    const result = validateTemplate(join(templatesDir, `${name}.jsonc`))
+    assert.equal(result.valid, true, JSON.stringify(result.errors, null, 2))
+  })
+}
