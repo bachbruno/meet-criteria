@@ -1,30 +1,21 @@
-// Template para correção UX ou iteração de tela existente.
-// Estrutura: Contexto + Problem Statement + Comparativo (antes/depois × tela) + Análise final.
-// "Correção UX" e "iteração" foram fundidas — estruturalmente idênticas.
+// Stub template for change/iteration deliverables.
+// The full structure (before/after pairs) will be rebuilt in a follow-up plan
+// once the visual reference is provided. For now, only ProblemStatement and
+// AnalysisOverview render.
 {
   "$schema": "../schemas/template.schema.json",
   "type": "mudanca",
-  "version": "1.0.0",
-  "label": "Mudança (correção UX / iteração)",
-  "description": "Estrutura para apresentar uma correção ou iteração comparando antes e depois.",
+  "version": "2.0.0",
+  "label": "Change (iteration / fix) — stub",
+  "description": "Stub template until the change-specific layout is designed.",
 
   "layout": {
-    "kind": "horizontal-columns",
-    "gap": 80,
-    "padding": 64,
-    "background": "{token:template.background}"
+    "kind": "section",
+    "padding": 280,
+    "background": "{token:section.background}"
   },
 
   "structure": [
-    {
-      "id": "context",
-      "component": "ContextMacro",
-      "required": true,
-      "props": {
-        "icon": "refresh",
-        "tokenBackground": "{token:tag.context.background}"
-      }
-    },
     {
       "id": "problem-statement",
       "component": "ProblemStatement",
@@ -33,33 +24,18 @@
       "supportsHierarchy": true
     },
     {
-      "id": "comparative",
-      "component": "Comparative",
+      "id": "analysis-overview",
+      "component": "AnalysisOverview",
       "required": true,
-      "minCount": 1,
-      "maxCount": 20,
-      "props": {
-        "kind": "before-after",
-        "labels": ["Antes", "Depois"],
-        "screenComponent": "ScreenSlot",
-        "anchorRecommended": true
-      }
-    },
-    {
-      "id": "final-analysis",
-      "component": "FinalAnalysis",
-      "required": true,
-      "sections": ["resolution", "strengths", "attention", "discussion"]
+      "sections": ["resolution", "validation", "attention", "discussion"]
     }
   ],
 
   "checks": {
     "deterministic": [
       "problem-statement-not-empty",
-      "no-empty-screen-slots",
       "no-placeholder-text",
-      "anchors-required-for-mudanca",
-      "final-analysis-not-empty"
+      "analysis-overview-not-empty"
     ]
   }
 }

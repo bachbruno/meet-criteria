@@ -1,29 +1,20 @@
-// Template para explorar variantes A/B/C de tela existente.
-// Estrutura: Contexto + Problem Statement + Variantes lado a lado + Critérios de decisão + Análise.
+// Stub template for concept (variants A/B/C) deliverables.
+// The variants + decision criteria layout will be rebuilt in a follow-up plan
+// once the visual reference is provided.
 {
   "$schema": "../schemas/template.schema.json",
   "type": "conceito",
-  "version": "1.0.0",
-  "label": "Conceito (variantes A/B/C)",
-  "description": "Estrutura para explorar variantes de uma tela com critérios de decisão explícitos.",
+  "version": "2.0.0",
+  "label": "Concept (variants A/B/C) — stub",
+  "description": "Stub template until the variants-specific layout is designed.",
 
   "layout": {
-    "kind": "horizontal-columns",
-    "gap": 80,
-    "padding": 64,
-    "background": "{token:template.background}"
+    "kind": "section",
+    "padding": 280,
+    "background": "{token:section.background}"
   },
 
   "structure": [
-    {
-      "id": "context",
-      "component": "ContextMacro",
-      "required": true,
-      "props": {
-        "icon": "compass",
-        "tokenBackground": "{token:tag.context.background}"
-      }
-    },
     {
       "id": "problem-statement",
       "component": "ProblemStatement",
@@ -32,38 +23,18 @@
       "supportsHierarchy": true
     },
     {
-      "id": "variants",
-      "component": "Comparative",
+      "id": "analysis-overview",
+      "component": "AnalysisOverview",
       "required": true,
-      "minCount": 2,
-      "maxCount": 5,
-      "props": {
-        "kind": "variants",
-        "labels": ["Variante A", "Variante B", "Variante C", "Variante D", "Variante E"],
-        "screenComponent": "ScreenSlot"
-      }
-    },
-    {
-      "id": "decision-criteria",
-      "component": "DecisionCriteria",
-      "required": true,
-      "supportsRichText": true,
-      "supportsHierarchy": true
-    },
-    {
-      "id": "final-analysis",
-      "component": "FinalAnalysis",
-      "required": true,
-      "sections": ["resolution", "strengths", "attention", "discussion"]
+      "sections": ["resolution", "validation", "attention", "discussion"]
     }
   ],
 
   "checks": {
     "deterministic": [
       "problem-statement-not-empty",
-      "no-empty-screen-slots",
       "no-placeholder-text",
-      "final-analysis-not-empty"
+      "analysis-overview-not-empty"
     ]
   }
 }
