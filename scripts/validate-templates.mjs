@@ -64,7 +64,7 @@ export function validateTemplate(filePath) {
     }
   }
 
-  return { valid: errors.length === 0, errors }
+  return { valid: errors.length === 0, errors, data: errors.length === 0 ? data : undefined }
 }
 
 async function main() {
