@@ -98,3 +98,63 @@ test('CLI input inválido (problemStatement vazio) sai com 1 e mensagem', () => 
   assert.equal(r.status, 1)
   assert.match(r.stderr, /problem-statement/)
 })
+
+test('CLI --with-render-js inclui renderJs no output JSON', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'mc-cli-rjs-'))
+  const inputs = {
+    ticketRef: 'PROD-99',
+    problemStatement: 'X',
+    flows: [{ name: 'F', screens: 2 }],
+    identity: { mode: 'default' },
+    selectionIds: ['1:1', '1:2'],
+  }
+  const r = run(['--type', 'feature', '--cwd', cwd, '--with-render-js', '--created-at', '2026-05-01T15:30:00.000Z'], { stdin: JSON.stringify(inputs) })
+  assert.equal(r.status, 0, r.stderr)
+  const out = JSON.parse(r.stdout)
+  assert.equal(out.manifest.type, 'feature')
+  assert.equal(typeof out.renderJs, 'string')
+  assert.match(out.renderJs, /createContextMacro/)
+  assert.match(out.renderJs, /"slug":\s*"prod-99"/)
+})
+
+test('CLI --with-render-js exige selectionIds em inputs', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'mc-cli-rjs-miss-'))
+  const inputs = {
+    ticketRef: 'PROD-100',
+    problemStatement: 'X',
+    flows: [{ name: 'F', screens: 1 }],
+    identity: { mode: 'default' },
+  }
+  const r = run(['--type', 'feature', '--cwd', cwd, '--with-render-js', '--created-at', '2026-05-01T15:30:00.000Z'], { stdin: JSON.stringify(inputs) })
+  assert.equal(r.status, 1)
+  assert.match(r.stderr, /selectionIds/)
+})
+
+test('CLI --with-render-js valida tamanho do selectionIds', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'mc-cli-rjs-size-'))
+  const inputs = {
+    ticketRef: 'PROD-101',
+    problemStatement: 'X',
+    flows: [{ name: 'F', screens: 3 }],
+    identity: { mode: 'default' },
+    selectionIds: ['1:1', '1:2'],
+  }
+  const r = run(['--type', 'feature', '--cwd', cwd, '--with-render-js', '--created-at', '2026-05-01T15:30:00.000Z'], { stdin: JSON.stringify(inputs) })
+  assert.equal(r.status, 1)
+  assert.match(r.stderr, /selectionIds.*3|3.*selectionIds/)
+})
+
+test('CLI sem --with-render-js mantém shape antigo (manifest direto)', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'mc-cli-noflag-'))
+  const inputs = {
+    ticketRef: 'PROD-102',
+    problemStatement: 'X',
+    flows: [{ name: 'F', screens: 1 }],
+    identity: { mode: 'default' },
+  }
+  const r = run(['--type', 'feature', '--cwd', cwd, '--created-at', '2026-05-01T15:30:00.000Z'], { stdin: JSON.stringify(inputs) })
+  assert.equal(r.status, 0, r.stderr)
+  const out = JSON.parse(r.stdout)
+  assert.equal(out.type, 'feature')
+  assert.equal(out.renderJs, undefined)
+})
