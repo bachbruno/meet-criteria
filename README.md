@@ -2,7 +2,7 @@
 
 Skills + figma-console MCP que ajudam designers de produto a conectar tickets de design a entregáveis no Figma — estruturando entregáveis, ancorando decisões e gerando narrativa pra apresentação.
 
-> **Status:** em construção. Planos 1, 2 e 3 (Foundation + Setup & Onboarding + /meet-criteria-new) implementados. Veja `docs/superpowers/plans/`.
+> **Status:** em construção. Planos 1, 2, 3 e 3.5 (Foundation + Setup & Onboarding + /meet-criteria-new + render Figma) implementados. Veja `docs/superpowers/plans/`.
 
 ## Arquitetura em 1 parágrafo
 
@@ -34,7 +34,8 @@ meet-criteria/
 │   ├── template-loader.mjs   # carrega + valida templates/<type>.jsonc
 │   ├── visual-identity.mjs   # default vs auto-detect + overrides
 │   ├── render-manifest.mjs   # plano declarativo de renderização
-│   └── local-store.mjs       # bootstrap .meet-criteria/<slug>/
+│   ├── local-store.mjs       # bootstrap .meet-criteria/<slug>/
+│   └── figma-render.mjs      # template JS + buildRenderJs (figma_execute)
 ├── scripts/
 │   ├── validate-templates.mjs
 │   ├── check-environment.mjs # diagnóstico de setup
@@ -82,6 +83,7 @@ Detalhes: [`skills/creating-templates.md`](skills/creating-templates.md).
 1. ✅ Foundation — schema, templates, tokens, validador
 2. ✅ Setup & onboarding (`/meet-criteria-setup`)
 3. ✅ Geração de templates (`/meet-criteria-new`)
+3.5. ✅ Render Figma (helpers `create*` expandidos + loop de validação visual)
 4. ⏭ Análise IA (`/meet-criteria-analyze`)
 5. ⏭ Âncoras (`/meet-criteria-anchor`, `/meet-criteria-export-annotations`)
 6. ⏭ Checks determinísticos (`/meet-criteria-check`)
