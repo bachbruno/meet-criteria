@@ -1,0 +1,22 @@
+// Fixture: instância mínima válida do template.
+// Existe um único nó obrigatório (ProblemStatement) — qualquer template real terá mais.
+{
+  "$schema": "../template.schema.json",
+  "type": "feature",
+  "version": "1.0.0",
+  "label": "Mínimo válido",
+  "description": "Usado em testes do validador",
+  "layout": {
+    "kind": "horizontal-columns",
+    "gap": 80,
+    "padding": 64,
+    "background": "{token:template.background}"
+  },
+  "structure": [
+    {
+      "id": "problem-statement",
+      "component": "ProblemStatement",
+      "required": true
+    }
+  ]
+}

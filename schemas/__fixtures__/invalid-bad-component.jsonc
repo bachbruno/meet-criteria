@@ -1,0 +1,14 @@
+// Fixture: inválido — componente "WhateverNotInEnum" não existe no enum oficial.
+{
+  "type": "feature",
+  "version": "1.0.0",
+  "label": "Componente inexistente",
+  "layout": { "kind": "horizontal-columns" },
+  "structure": [
+    {
+      "id": "x",
+      "component": "WhateverNotInEnum",
+      "required": true
+    }
+  ]
+}
