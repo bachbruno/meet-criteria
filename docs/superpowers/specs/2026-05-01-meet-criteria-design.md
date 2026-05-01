@@ -244,6 +244,45 @@ Fonte canônica: **paleta default do Tailwind CSS** (cores e fonte). Não usamos
 
 No modo **auto-detect**, esses tokens são substituídos pelos equivalentes encontrados nas variáveis do arquivo do designer.
 
+### Contrato visual dos componentes
+
+Especificação dos atributos visuais usados pela skill `creating-templates` no `figma_execute`. Valores em pixels Figma. Consumidores: `lib/figma-render.mjs` (helpers `create*`) e implementação dos próximos planos (Plano 5 — Âncoras).
+
+| Componente            | Layout    | Padding (X,Y) | Gap | Corner | Fill                          | Stroke                            | Width   |
+|-----------------------|-----------|---------------|-----|--------|-------------------------------|-----------------------------------|---------|
+| root container        | HORIZONTAL| 64            | 80  | 0      | `tokens.template.background`  | —                                 | AUTO    |
+| ContextMacro          | HORIZONTAL| 16, 12        | 12  | 16     | `tokens.tag.context.background`| 2px `tokens.tag.context.border`  | AUTO    |
+| ProblemStatement      | VERTICAL  | 32            | 16  | 0      | transparent                   | —                                 | 480     |
+| SectionHeader         | HORIZONTAL| 16, 8         | 0   | 8      | `tokens.tag.section.background`| —                                | AUTO    |
+| Flow wrapper          | VERTICAL  | 0             | 24  | 0      | transparent                   | —                                 | AUTO    |
+| ScreenSlot wrapper    | VERTICAL  | 0             | 12  | 0      | transparent                   | —                                 | AUTO    |
+| Screen status-tag     | HORIZONTAL| 12, 4         | 0   | 999    | `tokens.tag.screen.background`| —                                 | AUTO    |
+| Comparative item      | HORIZONTAL| 0             | 32  | 0      | transparent                   | —                                 | AUTO    |
+| DecisionCriteria      | VERTICAL  | 32, 24        | 12  | 12     | white                         | 1px `tokens.anchor.box.border`    | 480     |
+| FinalAnalysis         | VERTICAL  | 32            | 24  | 16     | white                         | 1px `tokens.anchor.box.border`    | 480     |
+
+Tipografia (família = `tokens.font.family.default`, fallback `Inter`):
+
+| Elemento                  | Tamanho | Peso    | Cor                         |
+|---------------------------|---------|---------|-----------------------------|
+| ContextMacro título       | 18      | Bold    | `#000000`                   |
+| ProblemStatement heading  | 24      | Bold    | white                       |
+| ProblemStatement body     | 16      | Regular | white                       |
+| SectionHeader text        | 14      | Bold    | `tokens.tag.section.text`   |
+| Status-tag text           | 12      | Bold    | `tokens.tag.screen.text`    |
+| DecisionCriteria heading  | 18      | Bold    | `#000000`                   |
+| DecisionCriteria body     | 16      | Regular | `#000000`                   |
+| FinalAnalysis heading     | 24      | Bold    | `#000000`                   |
+| FinalAnalysis section H   | 18      | Bold    | `#000000`                   |
+| FinalAnalysis section body| 14      | Regular | `#000000`                   |
+
+Tradução das chaves de `FinalAnalysis.sections`:
+
+- `resolution` → "Resolução"
+- `strengths` → "Pontos fortes"
+- `attention` → "Atenção"
+- `discussion` → "Discussão"
+
 ## Âncoras de anotação
 
 ### Formato customizado (default da skill)

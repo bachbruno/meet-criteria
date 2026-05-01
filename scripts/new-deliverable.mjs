@@ -24,16 +24,17 @@
 //   stderr: warnings (ex: identity auto sem overrides) + summary final humano
 
 import { resolve } from 'node:path'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeSync } from 'node:fs'
 import { normalizeTicketSlug } from '../lib/slug.mjs'
 import { loadTemplate, TemplateLoadError } from '../lib/template-loader.mjs'
 import { resolveIdentity, VisualIdentityError } from '../lib/visual-identity.mjs'
 import { buildRenderManifest, RenderInputError } from '../lib/render-manifest.mjs'
 import { TokenNotFoundError } from '../lib/visual-tokens.mjs'
 import { bootstrapLocalStore } from '../lib/local-store.mjs'
+import { buildRenderJs, RenderJsError } from '../lib/figma-render.mjs'
 
 function parseArgs(argv) {
-  const out = { type: null, cwd: process.cwd(), createdAt: null, dryRun: false, templatesDir: null }
+  const out = { type: null, cwd: process.cwd(), createdAt: null, dryRun: false, templatesDir: null, withRenderJs: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--type') out.type = argv[++i]
@@ -41,6 +42,7 @@ function parseArgs(argv) {
     else if (a === '--created-at') out.createdAt = argv[++i]
     else if (a === '--dry-run') out.dryRun = true
     else if (a === '--templates-dir') out.templatesDir = argv[++i]
+    else if (a === '--with-render-js') out.withRenderJs = true
     else if (a === '--help' || a === '-h') out.help = true
     else {
       console.error(`Argumento desconhecido: ${a}`)
@@ -63,7 +65,7 @@ function fail(message, code = 1) {
 function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.help) {
-    console.log('Usage: new-deliverable.mjs --type <feature|mudanca|conceito> [--cwd <path>] [--dry-run] [--created-at <ISO>] < inputs.json')
+    console.log('Usage: new-deliverable.mjs --type <feature|mudanca|conceito> [--cwd <path>] [--dry-run] [--with-render-js] [--created-at <ISO>] < inputs.json')
     process.exit(0)
   }
   if (!args.type) fail('--type é obrigatório (feature|mudanca|conceito)', 2)
@@ -125,7 +127,28 @@ function main() {
     }
   }
 
-  process.stdout.write(JSON.stringify(manifest, null, 2) + '\n')
+  let output
+  if (args.withRenderJs) {
+    const selectionIds = inputs.selectionIds
+    if (!Array.isArray(selectionIds)) {
+      fail('--with-render-js exige inputs.selectionIds (array de node IDs em ordem).', 1)
+    }
+    let renderJs
+    try {
+      renderJs = buildRenderJs({ manifest, selectionIds })
+    } catch (err) {
+      if (err instanceof RenderJsError) fail(err.message, 1)
+      throw err
+    }
+    output = { manifest, renderJs }
+  } else {
+    output = manifest
+  }
+
+  const payload = JSON.stringify(output, null, 2) + '\n'
+  // writeSync evita truncamento por race entre stdout buffer e process.exit
+  // (com payloads grandes — typical do --with-render-js que pode passar 10KB).
+  writeSync(1, payload)
   process.exit(0)
 }
 
