@@ -96,15 +96,18 @@ Olhe `~/.config/meet-criteria/config.json::preferences.default_visual_identity`:
 3. Mostre ao designer o mapping proposto e peça confirmação. Sem confirmação, caia no `default`.
 4. Estruture em `inputs.identity = { mode: 'auto', overrides: { 'tag.screen.background': '#...', ... } }`.
 
-## Passo 6 — Chamar o CLI
+## Passo 6 — Chamar o CLI (com `--with-render-js`)
 
-Monte o JSON de inputs e rode:
+Pra gerar manifest + JS de renderização em uma só chamada, o CLI agora aceita `--with-render-js`. Mas ele exige `selectionIds` em `inputs` — então o fluxo da skill é:
+
+1. **Primeiro**, peça ao designer que selecione as telas (Passo 7 abaixo) e capture os IDs.
+2. **Depois**, monte o JSON com `selectionIds` e rode:
 
 ```bash
-echo '<JSON_INPUTS>' | npm run new:deliverable -- --type <TYPE>
+echo '<JSON_INPUTS>' | npm run new:deliverable -- --type <TYPE> --with-render-js
 ```
 
-Onde `<JSON_INPUTS>` tem o shape:
+`<JSON_INPUTS>` shape:
 
 ```json
 {
@@ -114,11 +117,19 @@ Onde `<JSON_INPUTS>` tem o shape:
   "pairs": [...],
   "variants": [...],
   "decisionCriteria": "...",
-  "identity": { "mode": "default" | "auto", "overrides": { ... } }
+  "identity": { "mode": "default" | "auto", "overrides": { ... } },
+  "selectionIds": ["1:1", "1:2", ...]
 }
 ```
 
-Capture stdout (manifest JSON) e stderr (warnings + info). Se `exit code !== 0`, reporte ao designer e pare.
+Output: `{ "manifest": {...}, "renderJs": "..." }`. Capture os dois.
+
+Se `exit code !== 0`, reporte o `stderr` ao designer e pare. Erros típicos:
+- `selectionIds tem N item(s); manifest espera M` → contagem não bate; volte ao Passo 7
+- `problem-statement vazio` → volte ao Passo 3
+- `Tipo desconhecido` → o CLI não reconheceu `--type`
+
+> **Nota:** Por isso o Passo 6 vem DEPOIS do Passo 7 lá embaixo na execução real. A ordem na skill é didática (CLI vs. seleção), mas em runtime: pré-checagem → tipo → ticket → problem-statement → estrutura → identidade visual → seleção (Passo 7) → CLI (Passo 6) → renderização (Passo 8) → validação (Passo 8.5).
 
 ## Passo 7 — Selecionar telas no Figma
 
@@ -137,133 +148,44 @@ Se a contagem não bate, reporte exatamente o gap e peça nova seleção.
 
 ## Passo 8 — Renderizar via figma_execute
 
-> **Lembrete `figma-use` regra 7:** retorne IDs do nó criado, não o objeto. Regra 6: `setSharedPluginData` em UI — sem `await`. Regra 1: cada `figma_execute` é atômico — se erro no meio, reverta com `node.remove()`.
+> **Lembrete `figma-use` regra 1, 2, 3a, 6, 7, 9.** Invoque `figma-use` ANTES de chamar `figma_execute`. O JS gerado pelo CLI já cuida disso (loadFontAsync, loadAllPagesAsync, return de IDs string), mas o agente é responsável por seguir a etiqueta de erro atomicidade.
 
-Use o JS abaixo como template. Substitua `__MANIFEST__` pelo manifest JSON serializado, `__SELECTION_IDS__` pelo array de IDs em ordem.
+O JS pronto está em `output.renderJs` (capturado no Passo 6). Passe-o direto ao `figma_execute`:
 
-```js
-// ============================================================================
-// Meet Criteria — render template a partir de manifest declarativo.
-// Premissa: manifest validado em new-deliverable.mjs (lib/render-manifest.mjs).
-// ============================================================================
-const MANIFEST = __MANIFEST__
-const SELECTION = __SELECTION_IDS__
+```ts
+const result = await figma_execute(output.renderJs)
+const parsed = JSON.parse(result)
 
-// 1. Carrega todas as fonts antes de criar texto (figma-use regra 2).
-const FONT_FAMILY = MANIFEST.tokens['font.family.default'] ?? 'Inter'
-await figma.loadFontAsync({ family: FONT_FAMILY, style: 'Regular' })
-await figma.loadFontAsync({ family: FONT_FAMILY, style: 'Bold' })
-
-// 2. Cria/seleciona page nova (figma-use regra 3a).
-await figma.loadAllPagesAsync()
-let page = figma.root.children.find((p) => p.name === MANIFEST.page.name)
-if (page) {
-  return JSON.stringify({ error: `Page "${MANIFEST.page.name}" já existe — abortando para evitar sobrescrita. Renomeie ou apague antes.` })
+if (parsed.error) {
+  // page já existia, ou erro de runtime
+  // reporte ao designer e pare; oferece opções (renomear / apagar / cancelar) — ver "Em caso de erro" abaixo
+} else {
+  // parsed = { page: '<id>', container: '<id>', name: 'Meet Criteria — <ticketRef>' }
+  // sucesso — vá pro Passo 8.5 (validação visual)
 }
-page = figma.createPage()
-page.name = MANIFEST.page.name
-figma.currentPage = page
-
-// 3. Container raiz (auto-layout horizontal).
-const root = figma.createFrame()
-root.name = MANIFEST.container.name
-root.layoutMode = MANIFEST.layout.kind === 'vertical-stack' ? 'VERTICAL' : 'HORIZONTAL'
-root.itemSpacing = MANIFEST.layout.gap
-root.paddingTop = root.paddingBottom = root.paddingLeft = root.paddingRight = MANIFEST.layout.padding
-root.fills = [{ type: 'SOLID', color: hexToRgb(MANIFEST.layout.background) }]
-root.primaryAxisSizingMode = 'AUTO'
-root.counterAxisSizingMode = 'AUTO'
-page.appendChild(root)
-
-// Plugin data (figma-use regra 6: sync, sem await em UI).
-for (const [k, v] of Object.entries(MANIFEST.container.pluginData)) {
-  root.setSharedPluginData('meetCriteria', k, String(v))
-}
-
-// 4. Itera nodes do manifest e cria componentes na ordem.
-let nextSelectionIdx = 0
-
-for (const node of MANIFEST.nodes) {
-  if (node.component === 'ContextMacro') {
-    const f = createContextMacro(node, MANIFEST.tokens)
-    root.appendChild(f)
-  } else if (node.component === 'ProblemStatement') {
-    const f = await createProblemStatement(node, MANIFEST.tokens)
-    root.appendChild(f)
-  } else if (node.component === 'FlowList') {
-    for (const flow of node.children) {
-      const flowFrame = figma.createFrame()
-      flowFrame.name = flow.header.text
-      flowFrame.layoutMode = 'VERTICAL'
-      flowFrame.itemSpacing = 24
-      flowFrame.fills = []
-      flowFrame.primaryAxisSizingMode = 'AUTO'
-      flowFrame.counterAxisSizingMode = 'AUTO'
-      for (const [k, v] of Object.entries(flow.pluginData)) flowFrame.setSharedPluginData('meetCriteria', k, String(v))
-
-      const header = await createSectionHeader(flow.header.text, MANIFEST.tokens)
-      flowFrame.appendChild(header)
-
-      for (let i = 0; i < flow.screens.length; i++) {
-        const slot = flow.screens[i]
-        const figId = SELECTION[nextSelectionIdx++]
-        const screen = await createScreenSlot(slot, figId, MANIFEST.tokens)
-        flowFrame.appendChild(screen)
-      }
-      root.appendChild(flowFrame)
-    }
-  } else if (node.component === 'Comparative') {
-    for (const item of node.children) {
-      const comp = figma.createFrame()
-      comp.name = item.pluginData?.name ?? `Comparative ${item.pluginData?.pairIndex ?? ''}`
-      comp.layoutMode = 'HORIZONTAL'
-      comp.itemSpacing = 32
-      comp.fills = []
-      comp.primaryAxisSizingMode = 'AUTO'
-      comp.counterAxisSizingMode = 'AUTO'
-      for (const [k, v] of Object.entries(item.pluginData)) comp.setSharedPluginData('meetCriteria', k, String(v))
-      for (const slot of item.slots) {
-        const figId = SELECTION[nextSelectionIdx++]
-        const slotFrame = await createScreenSlot({ pluginData: slot.pluginData, label: slot.label }, figId, MANIFEST.tokens)
-        comp.appendChild(slotFrame)
-      }
-      root.appendChild(comp)
-    }
-  } else if (node.component === 'DecisionCriteria') {
-    const f = await createDecisionCriteria(node, MANIFEST.tokens)
-    root.appendChild(f)
-  } else if (node.component === 'FinalAnalysis') {
-    const f = await createFinalAnalysis(node, MANIFEST.tokens)
-    root.appendChild(f)
-  }
-}
-
-// 5. Retorna IDs (figma-use regra 7).
-return JSON.stringify({
-  page: page.id,
-  container: root.id,
-  name: root.name,
-})
-
-// ---------- helpers (definidos depois do return é inválido em Figma JS,
-//             mantidos no topo num arquivo real; aqui condensados pra brevidade)
-function hexToRgb(hex) { /* implementar: '#rrggbb' → { r, g, b } 0..1 */ }
-function createContextMacro(node, tokens) { /* frame + título + ícone */ }
-async function createProblemStatement(node, tokens) { /* texto rico */ }
-async function createSectionHeader(text, tokens) { /* tag escura */ }
-async function createScreenSlot(slot, figId, tokens) {
-  // Duplica node selecionado (figId) para a page atual (figma-use regra 3a):
-  const original = await figma.getNodeByIdAsync(figId)
-  const dup = original.clone()
-  // status-tag rosa em cima da imagem...
-}
-async function createDecisionCriteria(node, tokens) { /* lista bullets */ }
-async function createFinalAnalysis(node, tokens) { /* 4 seções */ }
 ```
 
-> **Importante:** as funções `create*` acima são esqueletos. Em produção, expanda-as inline (Figma JS não suporta function declarations após `return`). Mantenha cada função pura (recebe o node do manifest + tokens; cria e devolve um Frame).
+**Não modifique** o `renderJs`. Ele é a string final, com manifest + selection já substituídos. Editar quebra a integridade da renderização.
 
-Após `figma_execute` retornar, parseie o JSON: se houver `error`, reporte e pare. Se sucesso, peça ao usuário pra confirmar visualmente que as telas duplicadas estão na page nova.
+## Passo 8.5 — Validação visual (loop, máx 3 iterações)
+
+A renderização Figma só é validável visualmente. A skill `figma-use` recomenda o ciclo:
+
+1. **Screenshot** do container raiz: `figma_take_screenshot({ nodeId: parsed.container })`
+2. **Análise**: compare contra o spec (`docs/superpowers/specs/2026-05-01-meet-criteria-design.md` → seção "Contrato visual dos componentes"). Olhe especificamente:
+   - Spacing entre componentes (gap 80 entre top-level, gap 24 dentro de Flow, gap 32 dentro de Comparative)
+   - Status-tags rosa nos ScreenSlots (cor `#ec4899`, cantos 999, fonte Bold 12)
+   - SectionHeader escuro nos Flows (`#171717`, cantos 8, fonte Bold 14)
+   - ContextMacro com borda rosa (2px) e fundo branco
+   - ProblemStatement em texto branco sobre fundo `#262626`
+   - FinalAnalysis em caixa branca com borda cinza-claro
+3. **Iteração** se houver problema: NÃO refaça o `figma_execute` inteiro. Identifique o nó específico, ajuste-o via `figma_execute` curto que opera só nesse nó (ex: `node.itemSpacing = 80`). Máx 3 ciclos — se o 3º não fechar, reporte ao designer com prints e peça que avalie.
+4. **Confirmação visual**: peça ao designer pra olhar a page nova e confirmar.
+
+Padrões de defeito comuns e fix:
+- Texto cortado → `text.textAutoResize = 'HEIGHT'` no nó text + `text.layoutAlign = 'STRETCH'`
+- Frame com `width: 0` → `frame.counterAxisSizingMode = 'AUTO'` (ou `'FIXED'` + `resize(W, H)`)
+- Tela duplicada solta no canvas → confirme que está dentro do `ScreenSlot` wrapper; `wrapper.appendChild(dup)` antes de `setPluginData`
 
 ## Passo 9 — Reporte ao designer
 
