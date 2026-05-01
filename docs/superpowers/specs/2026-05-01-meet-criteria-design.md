@@ -225,19 +225,22 @@ Codificar o estilo na skill resolve tudo isso: self-contained, git-versionado, e
 
 ### Tokens do padrão Meet Criteria
 
-| Token | Valor default | Uso |
-|-------|--------------|-----|
-| `tag.screen.background` | `#FF1F8F` (magenta) | Status-tag de tela |
-| `tag.screen.text` | `#FFFFFF` | Texto do status-tag de tela |
-| `tag.section.background` | `#1F1F1F` (preto) | Section header de fluxo |
-| `tag.section.text` | `#FFFFFF` | Texto do section header |
-| `tag.context.background` | `#FFFFFF` com borda magenta | Contexto macro |
-| `anchor.box.background` | `#FFFFFF` | Caixa da âncora |
-| `anchor.box.border` | `#E0E0E0` | Borda da âncora |
-| `anchor.dot.color` | `#E5004C` | Ponto vermelho ancorado |
-| `anchor.line.color` | `#E5004C` | Linha conectora |
-| `font.family.default` | `Inter` | Tipografia padrão |
-| `template.background` | `#262626` (cinza escuro) | Fundo do canvas do template |
+Fonte canônica: **paleta default do Tailwind CSS** (cores e fonte). Não usamos `tailwindcss` em runtime — Figma desenha em hex/RGB; Tailwind aqui é a *fonte dos valores* e ancora consistência com paleta amplamente conhecida em produto. Cada token registra o nome Tailwind + hex resolvido.
+
+| Token | Tailwind ref | Hex resolvido | Uso |
+|-------|--------------|---------------|-----|
+| `tag.screen.background` | `pink-500` | `#ec4899` | Status-tag de tela |
+| `tag.screen.text` | `white` | `#ffffff` | Texto do status-tag de tela |
+| `tag.section.background` | `neutral-900` | `#171717` | Section header de fluxo |
+| `tag.section.text` | `white` | `#ffffff` | Texto do section header |
+| `tag.context.background` | `white` | `#ffffff` | Contexto macro |
+| `tag.context.border` | `pink-500` | `#ec4899` | Borda do contexto macro |
+| `anchor.box.background` | `white` | `#ffffff` | Caixa da âncora |
+| `anchor.box.border` | `neutral-200` | `#e5e5e5` | Borda da âncora |
+| `anchor.dot.color` | `rose-600` | `#e11d48` | Ponto ancorado |
+| `anchor.line.color` | `rose-600` | `#e11d48` | Linha conectora |
+| `font.family.default` | `font-sans` (default) | `Inter` | Tipografia padrão |
+| `template.background` | `neutral-800` | `#262626` | Fundo do canvas do template |
 
 No modo **auto-detect**, esses tokens são substituídos pelos equivalentes encontrados nas variáveis do arquivo do designer.
 

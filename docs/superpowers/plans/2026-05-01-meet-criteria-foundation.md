@@ -844,39 +844,70 @@ git commit -m "test: cover all 3 production templates in validator suite"
 
 ### Task 9: Módulo de tokens visuais — testes primeiro
 
+Os tokens vêm da **paleta default do Tailwind CSS** (decisão registrada no spec). Sem dep de `tailwindcss`: inline os valores referenciando o nome Tailwind como documentação.
+
 **Files:**
 - Delete: `lib/.gitkeep`
+- Create: `lib/tailwind-palette.mjs` (subset da paleta default Tailwind usada por Meet Criteria)
+- Create: `lib/visual-tokens.mjs`
 - Create: `lib/visual-tokens.test.mjs`
 
-- [ ] **Step 1: Escrever testes (script ainda não existe)**
+- [ ] **Step 1: Escrever testes (módulos ainda não existem)**
 
 Crie `lib/visual-tokens.test.mjs`:
 
 ```js
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { TAILWIND } from './tailwind-palette.mjs'
 import {
   DEFAULT_TOKENS,
+  TOKEN_TAILWIND_REF,
   resolveToken,
   resolveTokenRefs,
   TokenNotFoundError,
 } from './visual-tokens.mjs'
 
-test('DEFAULT_TOKENS exporta os tokens documentados no spec', () => {
-  assert.equal(DEFAULT_TOKENS['tag.screen.background'], '#FF1F8F')
-  assert.equal(DEFAULT_TOKENS['tag.screen.text'], '#FFFFFF')
-  assert.equal(DEFAULT_TOKENS['tag.section.background'], '#1F1F1F')
-  assert.equal(DEFAULT_TOKENS['tag.section.text'], '#FFFFFF')
-  assert.equal(DEFAULT_TOKENS['anchor.box.background'], '#FFFFFF')
-  assert.equal(DEFAULT_TOKENS['anchor.box.border'], '#E0E0E0')
-  assert.equal(DEFAULT_TOKENS['anchor.dot.color'], '#E5004C')
-  assert.equal(DEFAULT_TOKENS['anchor.line.color'], '#E5004C')
-  assert.equal(DEFAULT_TOKENS['font.family.default'], 'Inter')
+test('TAILWIND expõe subset da paleta default Tailwind', () => {
+  assert.equal(TAILWIND.white, '#ffffff')
+  assert.equal(TAILWIND['neutral-200'], '#e5e5e5')
+  assert.equal(TAILWIND['neutral-800'], '#262626')
+  assert.equal(TAILWIND['neutral-900'], '#171717')
+  assert.equal(TAILWIND['pink-500'], '#ec4899')
+  assert.equal(TAILWIND['rose-600'], '#e11d48')
+})
+
+test('TOKEN_TAILWIND_REF mapeia cada token semântico ao nome Tailwind', () => {
+  assert.equal(TOKEN_TAILWIND_REF['tag.screen.background'], 'pink-500')
+  assert.equal(TOKEN_TAILWIND_REF['tag.screen.text'], 'white')
+  assert.equal(TOKEN_TAILWIND_REF['tag.section.background'], 'neutral-900')
+  assert.equal(TOKEN_TAILWIND_REF['tag.section.text'], 'white')
+  assert.equal(TOKEN_TAILWIND_REF['tag.context.background'], 'white')
+  assert.equal(TOKEN_TAILWIND_REF['tag.context.border'], 'pink-500')
+  assert.equal(TOKEN_TAILWIND_REF['anchor.box.background'], 'white')
+  assert.equal(TOKEN_TAILWIND_REF['anchor.box.border'], 'neutral-200')
+  assert.equal(TOKEN_TAILWIND_REF['anchor.dot.color'], 'rose-600')
+  assert.equal(TOKEN_TAILWIND_REF['anchor.line.color'], 'rose-600')
+  assert.equal(TOKEN_TAILWIND_REF['template.background'], 'neutral-800')
+})
+
+test('DEFAULT_TOKENS resolve cada referência Tailwind para hex', () => {
+  assert.equal(DEFAULT_TOKENS['tag.screen.background'], '#ec4899')
+  assert.equal(DEFAULT_TOKENS['tag.screen.text'], '#ffffff')
+  assert.equal(DEFAULT_TOKENS['tag.section.background'], '#171717')
+  assert.equal(DEFAULT_TOKENS['tag.section.text'], '#ffffff')
+  assert.equal(DEFAULT_TOKENS['tag.context.background'], '#ffffff')
+  assert.equal(DEFAULT_TOKENS['tag.context.border'], '#ec4899')
+  assert.equal(DEFAULT_TOKENS['anchor.box.background'], '#ffffff')
+  assert.equal(DEFAULT_TOKENS['anchor.box.border'], '#e5e5e5')
+  assert.equal(DEFAULT_TOKENS['anchor.dot.color'], '#e11d48')
+  assert.equal(DEFAULT_TOKENS['anchor.line.color'], '#e11d48')
   assert.equal(DEFAULT_TOKENS['template.background'], '#262626')
+  assert.equal(DEFAULT_TOKENS['font.family.default'], 'Inter')
 })
 
 test('resolveToken devolve valor default quando não há override', () => {
-  assert.equal(resolveToken('tag.screen.background'), '#FF1F8F')
+  assert.equal(resolveToken('tag.screen.background'), '#ec4899')
 })
 
 test('resolveToken aplica override quando fornecido', () => {
@@ -891,7 +922,7 @@ test('resolveToken lança TokenNotFoundError em token desconhecido', () => {
 test('resolveTokenRefs substitui {token:nome} em strings', () => {
   assert.equal(
     resolveTokenRefs('bg={token:template.background};fg={token:tag.screen.text}'),
-    'bg=#262626;fg=#FFFFFF'
+    'bg=#262626;fg=#ffffff'
   )
 })
 
@@ -900,8 +931,8 @@ test('resolveTokenRefs deixa strings sem ref intactas', () => {
 })
 
 test('resolveTokenRefs com overrides usa overrides', () => {
-  const overrides = { 'template.background': '#FFFFFF' }
-  assert.equal(resolveTokenRefs('{token:template.background}', overrides), '#FFFFFF')
+  const overrides = { 'template.background': '#ffffff' }
+  assert.equal(resolveTokenRefs('{token:template.background}', overrides), '#ffffff')
 })
 
 test('resolveTokenRefs em objeto recursivamente', () => {
@@ -912,9 +943,9 @@ test('resolveTokenRefs em objeto recursivamente', () => {
   }
   const out = resolveTokenRefs(input)
   assert.deepEqual(out, {
-    fill: '#FF1F8F',
-    nested: { line: '#E5004C', literal: 'no-ref' },
-    items: ['#FFFFFF', 'plain'],
+    fill: '#ec4899',
+    nested: { line: '#e11d48', literal: 'no-ref' },
+    items: ['#ffffff', 'plain'],
   })
 })
 
@@ -926,34 +957,83 @@ test('resolveTokenRefs lança em token desconhecido', () => {
 - [ ] **Step 2: Rodar — devem falhar com módulo não encontrado**
 
 Run: `npm test`
-Expected: erros `ERR_MODULE_NOT_FOUND` referindo `visual-tokens.mjs`.
+Expected: erros `ERR_MODULE_NOT_FOUND` referindo `tailwind-palette.mjs` ou `visual-tokens.mjs`.
 
-- [ ] **Step 3: Implementar `lib/visual-tokens.mjs`**
+- [ ] **Step 3: Implementar `lib/tailwind-palette.mjs`**
 
 ```bash
 rm lib/.gitkeep
 ```
 
+Criar `lib/tailwind-palette.mjs`:
+
+```js
+// Subset da paleta default do Tailwind CSS (v3+) usada como fonte canônica
+// dos tokens visuais do Meet Criteria. Inline para evitar dep de `tailwindcss`
+// (não compilamos CSS — apenas consumimos os valores hex).
+//
+// Referência: https://tailwindcss.com/docs/customizing-colors
+//
+// Adicione novas cores apenas conforme um token semântico passar a referenciá-las.
+
+export const TAILWIND = Object.freeze({
+  white: '#ffffff',
+  black: '#000000',
+  'neutral-200': '#e5e5e5',
+  'neutral-800': '#262626',
+  'neutral-900': '#171717',
+  'pink-500': '#ec4899',
+  'rose-600': '#e11d48',
+})
+
+// Família tipográfica default do Tailwind (font-sans).
+// Tailwind define `Inter var, ui-sans-serif, system-ui, ...`. Figma exige um
+// nome de família registrado, então usamos o primeiro membro concreto do stack.
+export const TAILWIND_FONT_SANS_DEFAULT = 'Inter'
+```
+
+- [ ] **Step 4: Implementar `lib/visual-tokens.mjs`**
+
 Criar `lib/visual-tokens.mjs`:
 
 ```js
 // Registry default + resolver para tokens visuais Meet Criteria.
-// Sem dependências externas. Tokens documentados em docs/superpowers/specs/2026-05-01-meet-criteria-design.md.
+// Tokens são derivados da paleta default do Tailwind CSS — ver
+// `lib/tailwind-palette.mjs` e a tabela em
+// `docs/superpowers/specs/2026-05-01-meet-criteria-design.md`.
 
-export const DEFAULT_TOKENS = Object.freeze({
-  'tag.screen.background': '#FF1F8F',
-  'tag.screen.text': '#FFFFFF',
-  'tag.section.background': '#1F1F1F',
-  'tag.section.text': '#FFFFFF',
-  'tag.context.background': '#FFFFFF',
-  'tag.context.border': '#FF1F8F',
-  'anchor.box.background': '#FFFFFF',
-  'anchor.box.border': '#E0E0E0',
-  'anchor.dot.color': '#E5004C',
-  'anchor.line.color': '#E5004C',
-  'font.family.default': 'Inter',
-  'template.background': '#262626',
+import { TAILWIND, TAILWIND_FONT_SANS_DEFAULT } from './tailwind-palette.mjs'
+
+// Mapeamento token semântico → nome Tailwind (documentação executável).
+export const TOKEN_TAILWIND_REF = Object.freeze({
+  'tag.screen.background': 'pink-500',
+  'tag.screen.text': 'white',
+  'tag.section.background': 'neutral-900',
+  'tag.section.text': 'white',
+  'tag.context.background': 'white',
+  'tag.context.border': 'pink-500',
+  'anchor.box.background': 'white',
+  'anchor.box.border': 'neutral-200',
+  'anchor.dot.color': 'rose-600',
+  'anchor.line.color': 'rose-600',
+  'template.background': 'neutral-800',
 })
+
+// Resolução estática de cada token → hex (ou família, no caso da fonte).
+function buildDefaultTokens() {
+  const tokens = {}
+  for (const [name, ref] of Object.entries(TOKEN_TAILWIND_REF)) {
+    const hex = TAILWIND[ref]
+    if (!hex) {
+      throw new Error(`Tailwind reference "${ref}" not present in TAILWIND palette`)
+    }
+    tokens[name] = hex
+  }
+  tokens['font.family.default'] = TAILWIND_FONT_SANS_DEFAULT
+  return Object.freeze(tokens)
+}
+
+export const DEFAULT_TOKENS = buildDefaultTokens()
 
 export class TokenNotFoundError extends Error {
   constructor(name) {
@@ -990,14 +1070,14 @@ export function resolveTokenRefs(value, overrides = {}) {
 - [ ] **Step 4: Rodar — devem passar**
 
 Run: `npm test`
-Expected: 16 tests pass (7 anteriores + 9 novos).
+Expected: 18 tests pass (7 anteriores + 11 novos).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add lib/visual-tokens.mjs lib/visual-tokens.test.mjs
+git add lib/tailwind-palette.mjs lib/visual-tokens.mjs lib/visual-tokens.test.mjs
 git rm lib/.gitkeep 2>/dev/null || true
-git commit -m "feat(lib): add visual tokens registry + {token:...} resolver"
+git commit -m "feat(lib): add Tailwind-derived visual tokens + {token:...} resolver"
 ```
 
 ---
@@ -1088,7 +1168,7 @@ git commit -m "docs: add README with architecture overview, scripts, roadmap"
 - [ ] **Step 1: Rodar suíte completa**
 
 Run: `npm test`
-Expected: 16 tests pass, 0 failures.
+Expected: 18 tests pass, 0 failures.
 
 - [ ] **Step 2: Validar todos os templates**
 
@@ -1124,7 +1204,7 @@ Expected: ver os ~10 commits descritivos da fase, do bootstrap ao README.
 **1. Cobertura do spec (Foundation):**
 - Schema canônico (`schemas/template.schema.json`) — Task 3 ✅
 - 3 templates JSONC (`feature`, `mudanca`, `conceito`) — Tasks 5/6/7 ✅
-- Tokens default Meet Criteria (12 tokens da tabela do spec) — Task 9 ✅
+- Tokens default Meet Criteria derivados da paleta Tailwind (12 tokens da tabela do spec) — Task 9 ✅
 - Resolver `{token:nome}` — Task 9 ✅
 - Estrutura de pastas (skills/, commands/, prompts/, etc) — Task 1 ✅ (placeholders pra preencher nos próximos planos)
 - Validador automatizado — Task 4 ✅
