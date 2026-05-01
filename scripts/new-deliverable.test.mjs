@@ -44,10 +44,10 @@ test('CLI feature: imprime manifest válido em stdout', () => {
   const r = run(['--type', 'feature', '--cwd', cwd, '--created-at', '2026-05-01T15:30:00.000Z'], { stdin: JSON.stringify(FEATURE_INPUTS) })
   assert.equal(r.status, 0, r.stderr)
   const manifest = JSON.parse(r.stdout)
-  assert.equal(manifest.version, '1.0.0')
+  assert.equal(manifest.version, '2.0.0')
   assert.equal(manifest.type, 'feature')
   assert.equal(manifest.slug, 'prod-1234')
-  assert.equal(manifest.container.name, 'Meet Criteria — PROD-1234')
+  assert.equal(manifest.section.name, 'Meet Criteria - PROD-1234')
 })
 
 test('CLI feature: cria local store em <cwd>/.meet-criteria/<slug>/', () => {
@@ -113,7 +113,7 @@ test('CLI --with-render-js inclui renderJs no output JSON', () => {
   const out = JSON.parse(r.stdout)
   assert.equal(out.manifest.type, 'feature')
   assert.equal(typeof out.renderJs, 'string')
-  assert.match(out.renderJs, /createContextMacro/)
+  assert.match(out.renderJs, /figma\.createSection/)
   assert.match(out.renderJs, /"slug":\s*"prod-99"/)
 })
 
