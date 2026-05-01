@@ -33,24 +33,20 @@
       "additionalProperties": false,
       "required": ["kind"],
       "properties": {
-        "kind": { "enum": ["horizontal-columns", "vertical-stack", "grid"] },
-        "gap": { "type": "number", "minimum": 0 },
+        "kind": { "enum": ["section"] },
         "padding": { "type": "number", "minimum": 0 },
         "background": { "type": "string" }
       }
     },
     "componentName": {
       "enum": [
-        "ContextMacro",
         "ProblemStatement",
         "FlowList",
-        "Flow",
-        "SectionHeader",
-        "ScreenSlot",
-        "Comparative",
-        "DecisionCriteria",
-        "AnchorBox",
-        "FinalAnalysis"
+        "FlowNameBanner",
+        "ScreenNameTag",
+        "IPhonePlaceholder",
+        "AnalysisOverview",
+        "AnalysisSubFrame"
       ]
     },
     "structureNode": {
