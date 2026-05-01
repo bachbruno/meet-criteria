@@ -107,6 +107,15 @@ function main() {
 
   const createdAt = args.createdAt ?? new Date().toISOString()
 
+  // Accept either the rich `selection: [{id, name}]` (preferred) or the legacy
+  // flat `selectionIds: [string]`. When `selection` is provided, derive both
+  // selectionIds and selectionNames so the manifest builder can populate
+  // the screen tags with real names.
+  if (Array.isArray(inputs.selection)) {
+    inputs.selectionIds = inputs.selection.map((s) => (s && typeof s === 'object' ? s.id : null))
+    inputs.selectionNames = inputs.selection.map((s) => (s && typeof s === 'object' ? s.name : null))
+  }
+
   let manifest
   try {
     manifest = buildRenderManifest({ template, identity, slug, ticketRef, createdAt, inputs })

@@ -100,7 +100,7 @@ Olhe `~/.config/meet-criteria/config.json::preferences.default_visual_identity`:
 
 Pra gerar manifest + JS de renderização em uma só chamada, o CLI agora aceita `--with-render-js`. Mas ele exige `selectionIds` em `inputs` — então o fluxo da skill é:
 
-1. **Primeiro**, peça ao designer que selecione as telas (Passo 7 abaixo) e capture os IDs.
+1. **Primeiro**, peça ao designer que crie o frame container e cole o link (Passo 7 abaixo) e extraia os IDs em ordem.
 2. **Depois**, monte o JSON com `selectionIds` e rode:
 
 ```bash
@@ -118,9 +118,11 @@ echo '<JSON_INPUTS>' | npm run new:deliverable -- --type <TYPE> --with-render-js
   "variants": [...],
   "decisionCriteria": "...",
   "identity": { "mode": "default" | "auto", "overrides": { ... } },
-  "selectionIds": ["1:1", "1:2", ...]
+  "selection": [{ "id": "1:1", "name": "Login" }, { "id": "1:2", "name": "Home" }]
 }
 ```
+
+> **Compatibilidade:** o CLI ainda aceita `selectionIds: ["1:1", ...]` (array flat) sem `selection`. Nesse caso as tags acima das telas ficam com o placeholder genérico "Screen name". Use `selection` sempre que possível.
 
 Output: `{ "manifest": {...}, "renderJs": "..." }`. Capture os dois.
 
@@ -129,22 +131,55 @@ Se `exit code !== 0`, reporte o `stderr` ao designer e pare. Erros típicos:
 - `problem-statement vazio` → volte ao Passo 3
 - `Tipo desconhecido` → o CLI não reconheceu `--type`
 
-> **Nota:** Por isso o Passo 6 vem DEPOIS do Passo 7 lá embaixo na execução real. A ordem na skill é didática (CLI vs. seleção), mas em runtime: pré-checagem → tipo → ticket → problem-statement → estrutura → identidade visual → seleção (Passo 7) → CLI (Passo 6) → renderização (Passo 8) → validação (Passo 8.5).
+> **Nota:** Por isso o Passo 6 vem DEPOIS do Passo 7 lá embaixo na execução real. A ordem na skill é didática (CLI vs. container), mas em runtime: pré-checagem → tipo → ticket → problem-statement → estrutura → identidade visual → container (Passo 7) → CLI (Passo 6) → renderização (Passo 8) → validação (Passo 8.5).
 
-## Passo 7 — Selecionar telas no Figma
+## Passo 7 — Frame container com auto layout
 
 **Antes** de renderizar o template, peça ao designer:
 
-> Selecione no canvas atual as telas que devem entrar nesse entregável e me avise.
+> Crie um **frame** (não section) no Figma chamado, por exemplo, `MC Source — <ticketRef>`, ative **auto layout** (`Shift+A`) com direção horizontal ou vertical, arraste pra dentro dele as telas **na ordem desejada**, e cole aqui o link desse frame.
 
-Aguarde confirmação textual. Depois rode `figma_get_selection` e capture os IDs em ordem.
+> **Por que frame com auto layout (e não section)?** Section só agrupa visualmente — o `children[]` no painel de camadas pode não bater com a ordem visual no canvas, e isso entra silenciosamente errado no manifest. Frame com auto layout força `children[]` a refletir a ordem visual: arrastar reordena ambos juntos, e quem renderiza tem garantia da ordem certa.
 
-Valide:
+Aguarde a URL. Extraia o `node-id` do query string. O Figma usa duas codificações intercambiáveis (`3-14266` e `3:14266`) — normalize trocando `-` por `:`.
+
+```js
+// link recebido: https://www.figma.com/design/<key>/<file>?node-id=12-345&...
+const url = new URL(linkRecebido)
+const nodeIdRaw = url.searchParams.get('node-id')
+if (!nodeIdRaw) throw new Error('Link sem ?node-id=. Peça pro designer copiar via "Copy link to selection".')
+const containerId = nodeIdRaw.replace(/-/g, ':')
+```
+
+Depois rode `figma_execute` curto pra ler o container, validar que é frame com auto layout, e capturar `id` + `name` de cada filho em ordem:
+
+```js
+await figma.loadAllPagesAsync()
+const container = await figma.getNodeByIdAsync(containerId)
+if (!container) return { error: 'Container não encontrado: ' + containerId }
+if (!('children' in container)) return { error: 'Nó não tem children (precisa ser FRAME ou SECTION).' }
+return {
+  containerName: container.name,
+  containerType: container.type,
+  layoutMode: 'layoutMode' in container ? container.layoutMode : null, // 'HORIZONTAL' | 'VERTICAL' | 'NONE'
+  selection: container.children.map(c => ({ id: c.id, name: c.name })),
+}
+```
+
+**Validações em ordem (pare na primeira falha):**
+
+1. **Tipo:** se `containerType !== 'FRAME'`, peça pro designer trocar pra frame: "Section/Group não preserva a ordem visual no `children[]`. Converta em frame (Right-click → Frame selection) e me mande o link de novo."
+2. **Auto layout:** se `layoutMode === 'NONE'` ou `null`, peça: "Frame está sem auto layout — `children[]` pode não bater com a ordem visual. Selecione o frame e aperte `Shift+A` (horizontal) ou `Shift+A` duas vezes (vertical), e me confirme."
+3. **Ordem visual (rede de segurança):** mesmo com frame+auto-layout, tire um screenshot do container pra confirmar visualmente. Use `figma_take_screenshot({ nodeId: containerId })` ou `figma_capture_screenshot`. Olhe a imagem e confirme que a ordem do array `selection` corresponde à ordem que o designer pretendia (esq→dir pra horizontal, cima→baixo pra vertical). Se houver discrepância (raríssimo com auto layout, comum em section/group), reporte ao designer com os nomes em ordem detectada e peça correção.
+
+Use `selection` direto como `inputs.selection` no Passo 6 — o CLI extrai `selectionIds` e `selectionNames` automaticamente. Os nomes vão aparecer nas tags acima de cada tela.
+
+Valide a contagem:
 - `feature`: `selection.length === sum(flows[].screens)` (ordem importa: primeiras N telas vão pro Fluxo 1, próximas M pro Fluxo 2, etc).
 - `mudanca`: `selection.length === pairs.length * 2` (ordem: par1.antes, par1.depois, par2.antes, par2.depois, ...).
 - `conceito`: `selection.length === variants.length`.
 
-Se a contagem não bate, reporte exatamente o gap e peça nova seleção.
+Se a contagem não bate, reporte exatamente o gap e peça pro designer adicionar/remover telas do frame e mandar o link de novo (a URL não muda, mas o `children[]` sim).
 
 ## Passo 8 — Renderizar via figma_execute
 
