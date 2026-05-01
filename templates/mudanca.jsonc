@@ -1,0 +1,65 @@
+// Template para correção UX ou iteração de tela existente.
+// Estrutura: Contexto + Problem Statement + Comparativo (antes/depois × tela) + Análise final.
+// "Correção UX" e "iteração" foram fundidas — estruturalmente idênticas.
+{
+  "$schema": "../schemas/template.schema.json",
+  "type": "mudanca",
+  "version": "1.0.0",
+  "label": "Mudança (correção UX / iteração)",
+  "description": "Estrutura para apresentar uma correção ou iteração comparando antes e depois.",
+
+  "layout": {
+    "kind": "horizontal-columns",
+    "gap": 80,
+    "padding": 64,
+    "background": "{token:template.background}"
+  },
+
+  "structure": [
+    {
+      "id": "context",
+      "component": "ContextMacro",
+      "required": true,
+      "props": {
+        "icon": "refresh",
+        "tokenBackground": "{token:tag.context.background}"
+      }
+    },
+    {
+      "id": "problem-statement",
+      "component": "ProblemStatement",
+      "required": true,
+      "supportsRichText": true,
+      "supportsHierarchy": true
+    },
+    {
+      "id": "comparative",
+      "component": "Comparative",
+      "required": true,
+      "minCount": 1,
+      "maxCount": 20,
+      "props": {
+        "kind": "before-after",
+        "labels": ["Antes", "Depois"],
+        "screenComponent": "ScreenSlot",
+        "anchorRecommended": true
+      }
+    },
+    {
+      "id": "final-analysis",
+      "component": "FinalAnalysis",
+      "required": true,
+      "sections": ["resolution", "strengths", "attention", "discussion"]
+    }
+  ],
+
+  "checks": {
+    "deterministic": [
+      "problem-statement-not-empty",
+      "no-empty-screen-slots",
+      "no-placeholder-text",
+      "anchors-required-for-mudanca",
+      "final-analysis-not-empty"
+    ]
+  }
+}
