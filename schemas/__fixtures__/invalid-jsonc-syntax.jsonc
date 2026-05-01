@@ -1,0 +1,14 @@
+// Fixture: inválido — sintaxe JSONC quebrada (token inesperado depois de "feature").
+{
+  "type": "feature" invalid,
+  "version": "1.0.0",
+  "label": "JSONC quebrado",
+  "layout": { "kind": "horizontal-columns" },
+  "structure": [
+    {
+      "id": "x",
+      "component": "ProblemStatement",
+      "required": true
+    }
+  ]
+}

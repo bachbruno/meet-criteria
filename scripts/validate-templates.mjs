@@ -39,8 +39,32 @@ export function validateTemplate(filePath) {
     }
   }
   const validate = getValidator()
-  const valid = validate(data)
-  return { valid, errors: valid ? [] : (validate.errors ?? []) }
+  const schemaValid = validate(data)
+  const errors = schemaValid ? [] : [...(validate.errors ?? [])]
+
+  // JSON Schema 2020-12 não tem keyword nativa de "uniqueItems by property".
+  // Skills downstream usam `id` como chave de lookup — duplicatas seriam um bug
+  // silencioso. Aplicamos a checagem aqui, depois do schema, e usamos `keyword: 'unique'`.
+  if (Array.isArray(data?.structure)) {
+    const seen = new Map()
+    for (let i = 0; i < data.structure.length; i++) {
+      const node = data.structure[i]
+      const id = node?.id
+      if (typeof id !== 'string') continue
+      if (seen.has(id)) {
+        errors.push({
+          keyword: 'unique',
+          instancePath: `/structure/${i}/id`,
+          message: `duplicate id "${id}" in structure (also at index ${seen.get(id)})`,
+          params: { duplicateId: id, firstIndex: seen.get(id), duplicateIndex: i },
+        })
+      } else {
+        seen.set(id, i)
+      }
+    }
+  }
+
+  return { valid: errors.length === 0, errors }
 }
 
 async function main() {

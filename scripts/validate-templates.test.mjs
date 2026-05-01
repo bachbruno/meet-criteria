@@ -33,6 +33,22 @@ test('arquivo inexistente devolve erro de IO', () => {
   assert.match(result.errors[0].message, /ENOENT|not found|no such file/i)
 })
 
+test('JSONC com sintaxe quebrada devolve erro com keyword "parse"', () => {
+  const result = validateTemplate(join(fixtures, 'invalid-jsonc-syntax.jsonc'))
+  assert.equal(result.valid, false)
+  const hasParseError = result.errors.some((e) => e.keyword === 'parse')
+  assert.equal(hasParseError, true, JSON.stringify(result.errors))
+})
+
+test('estrutura com `id` duplicado é rejeitada com keyword "unique"', () => {
+  const result = validateTemplate(join(fixtures, 'invalid-duplicate-id.jsonc'))
+  assert.equal(result.valid, false)
+  const dupErrors = result.errors.filter((e) => e.keyword === 'unique')
+  assert.equal(dupErrors.length, 1)
+  assert.match(dupErrors[0].message, /duplicate id "context"/)
+  assert.equal(dupErrors[0].params.duplicateId, 'context')
+})
+
 const templatesDir = join(here, '..', 'templates')
 
 for (const name of ['feature', 'mudanca', 'conceito']) {
