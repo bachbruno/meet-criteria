@@ -9,7 +9,9 @@
   },
   "scripts": {
     "test": "node --test --test-reporter=spec",
-    "validate:templates": "node scripts/validate-templates.mjs templates/*.jsonc"
+    "validate:templates": "node scripts/validate-templates.mjs templates/*.jsonc",
+    "check:environment": "node scripts/check-environment.mjs",
+    "setup:write-config": "node scripts/init-config.mjs"
   },
   "dependencies": {
     "ajv": "^8.17.1",
