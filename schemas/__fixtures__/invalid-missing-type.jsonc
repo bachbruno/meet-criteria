@@ -1,0 +1,13 @@
+// Fixture: inválido — falta o campo `type` (que é required).
+{
+  "version": "1.0.0",
+  "label": "Sem type",
+  "layout": { "kind": "horizontal-columns" },
+  "structure": [
+    {
+      "id": "problem-statement",
+      "component": "ProblemStatement",
+      "required": true
+    }
+  ]
+}

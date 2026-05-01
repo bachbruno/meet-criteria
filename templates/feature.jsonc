@@ -1,0 +1,66 @@
+// Template para apresentação de feature nova (greenfield).
+// Estrutura: Contexto + Problem Statement + N fluxos × M telas + Análise final.
+{
+  "$schema": "../schemas/template.schema.json",
+  "type": "feature",
+  "version": "1.0.0",
+  "label": "Feature nova",
+  "description": "Estrutura para apresentar uma feature do zero, com fluxos e telas justificadas.",
+
+  "layout": {
+    "kind": "horizontal-columns",
+    "gap": 80,
+    "padding": 64,
+    "background": "{token:template.background}"
+  },
+
+  "structure": [
+    {
+      "id": "context",
+      "component": "ContextMacro",
+      "required": true,
+      "props": {
+        "icon": "star",
+        "tokenBackground": "{token:tag.context.background}"
+      }
+    },
+    {
+      "id": "problem-statement",
+      "component": "ProblemStatement",
+      "required": true,
+      "supportsRichText": true,
+      "supportsHierarchy": true
+    },
+    {
+      "id": "flows",
+      "component": "FlowList",
+      "required": true,
+      "minCount": 1,
+      "maxCount": 10,
+      "itemTemplate": {
+        "component": "Flow",
+        "props": {
+          "headerComponent": "SectionHeader",
+          "screenComponent": "ScreenSlot",
+          "minScreens": 1,
+          "maxScreens": 20
+        }
+      }
+    },
+    {
+      "id": "final-analysis",
+      "component": "FinalAnalysis",
+      "required": true,
+      "sections": ["resolution", "strengths", "attention", "discussion"]
+    }
+  ],
+
+  "checks": {
+    "deterministic": [
+      "problem-statement-not-empty",
+      "no-empty-screen-slots",
+      "no-placeholder-text",
+      "final-analysis-not-empty"
+    ]
+  }
+}

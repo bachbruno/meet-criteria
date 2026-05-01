@@ -1,0 +1,22 @@
+// Fixture: schema-válido mas com `id` duplicado em `structure`.
+// Esse caso passa o schema (Draft 2020-12 não tem uniqueness por propriedade)
+// e é capturado pela checagem extra do validador.
+{
+  "$schema": "../template.schema.json",
+  "type": "feature",
+  "version": "1.0.0",
+  "label": "Duplicate id",
+  "layout": { "kind": "horizontal-columns" },
+  "structure": [
+    {
+      "id": "context",
+      "component": "ContextMacro",
+      "required": true
+    },
+    {
+      "id": "context",
+      "component": "ProblemStatement",
+      "required": true
+    }
+  ]
+}

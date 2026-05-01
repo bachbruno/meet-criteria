@@ -1,0 +1,59 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+import { validateTemplate } from './validate-templates.mjs'
+
+const here = dirname(fileURLToPath(import.meta.url))
+const fixtures = join(here, '..', 'schemas', '__fixtures__')
+
+test('valid-minimal.jsonc passa', () => {
+  const result = validateTemplate(join(fixtures, 'valid-minimal.jsonc'))
+  assert.equal(result.valid, true, JSON.stringify(result.errors))
+  assert.deepEqual(result.errors, [])
+})
+
+test('invalid-missing-type.jsonc falha com erro mencionando "type"', () => {
+  const result = validateTemplate(join(fixtures, 'invalid-missing-type.jsonc'))
+  assert.equal(result.valid, false)
+  const message = result.errors.map((e) => e.message + ' ' + (e.params?.missingProperty ?? '')).join(' | ')
+  assert.match(message, /type/)
+})
+
+test('invalid-bad-component.jsonc falha com erro de enum', () => {
+  const result = validateTemplate(join(fixtures, 'invalid-bad-component.jsonc'))
+  assert.equal(result.valid, false)
+  const hasEnumError = result.errors.some((e) => e.keyword === 'enum')
+  assert.equal(hasEnumError, true)
+})
+
+test('arquivo inexistente devolve erro de IO', () => {
+  const result = validateTemplate(join(fixtures, '__missing__.jsonc'))
+  assert.equal(result.valid, false)
+  assert.match(result.errors[0].message, /ENOENT|not found|no such file/i)
+})
+
+test('JSONC com sintaxe quebrada devolve erro com keyword "parse"', () => {
+  const result = validateTemplate(join(fixtures, 'invalid-jsonc-syntax.jsonc'))
+  assert.equal(result.valid, false)
+  const hasParseError = result.errors.some((e) => e.keyword === 'parse')
+  assert.equal(hasParseError, true, JSON.stringify(result.errors))
+})
+
+test('estrutura com `id` duplicado é rejeitada com keyword "unique"', () => {
+  const result = validateTemplate(join(fixtures, 'invalid-duplicate-id.jsonc'))
+  assert.equal(result.valid, false)
+  const dupErrors = result.errors.filter((e) => e.keyword === 'unique')
+  assert.equal(dupErrors.length, 1)
+  assert.match(dupErrors[0].message, /duplicate id "context"/)
+  assert.equal(dupErrors[0].params.duplicateId, 'context')
+})
+
+const templatesDir = join(here, '..', 'templates')
+
+for (const name of ['feature', 'mudanca', 'conceito']) {
+  test(`templates/${name}.jsonc é válido contra o schema`, () => {
+    const result = validateTemplate(join(templatesDir, `${name}.jsonc`))
+    assert.equal(result.valid, true, JSON.stringify(result.errors, null, 2))
+  })
+}
