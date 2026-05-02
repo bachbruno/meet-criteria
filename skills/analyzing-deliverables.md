@@ -67,14 +67,25 @@ Carregue `prompts/analyze-final.md`, substitua placeholders, envie ao agente, pa
 
 Carregue `prompts/analyze-gap-check.md`, mesma substituição. Parse → `validateGapCheck` → `formatGapCheckForFigma`. Se erro: aborte sem escrever.
 
-## Passo 10 — Escrita atômica no Figma
+## Passo 10 — Escrita no Figma (3 chamadas sequenciais)
 
-Gere os 3 JSs:
-- `buildWriteJustificationsJs({ updates: justifications })`
-- `buildWriteAnalysisJs({ analysisOverviewId, sections: { resolution, validation, attention, discussion, gapCheck: formattedGapCheck } })`
-- `buildStampAnalyzedAtJs({ sectionId, isoDate: new Date().toISOString() })`
+Após validar todos os outputs da IA (passos 7, 8, 9 — nenhum write até aqui),
+execute em sequência via `figma_execute`:
 
-Concatene as três strings em uma única call `figma_execute` (envolva cada uma com try/catch se preferir, mas o builder já retorna IIFE-friendly). Capture o resultado e logue contagens.
+1. `buildWriteJustificationsJs({ updates: justifications })` — preenche os text
+   nodes `screen-justification` por `flowId+screenIndex`. Capture
+   `writtenJustifications` no resultado.
+2. `buildWriteAnalysisJs({ analysisOverviewId, sections: { resolution, validation, attention, discussion, gapCheck: formattedGapCheck } })` — preenche as 5 sub-seções de Analysis Overview por `key`. Capture `updatedSubsections`.
+3. `buildStampAnalyzedAtJs({ sectionId, isoDate: new Date().toISOString() })` — atualiza `lastAnalyzedAt` no plugin data root.
+
+Não há concatenação: cada builder gera um body de função async com `return` próprio,
+então cada um precisa ser uma chamada `figma_execute` distinta. Se qualquer um falhar
+mid-sequência, os anteriores já estão persistidos (e serão sobrescritos no próximo
+`/meet-criteria-analyze` — operação idempotente).
+
+Garantia: nenhum write começa antes de TODA a IA ter validado seus outputs (passos
+7-9 ocorrem inteiramente em memória). Isso preserva o invariante "fail-fast at
+validation" da spec.
 
 ## Passo 11 — Resumo + screenshot final
 
