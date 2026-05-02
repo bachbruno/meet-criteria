@@ -82,7 +82,7 @@ Mesmo padrão consolidado nos Planos 3/3.5/3.6: **lib pura testável + skill con
 
 ### `schemas/template.schema.json`
 
-Enum `sections` aceita `gap-check` (em adição a `resolution`, `validation`, `attention`, `discussion`). Sem novo componente raiz — `ScreenJustification` é detalhe interno do builder.
+Sem mudanças necessárias: `sections` já é definido como array de strings sem enum constraint. Adicionar `gap-check` em `templates/feature.jsonc` é suficiente. `ScreenJustification` segue como detalhe interno do builder, sem entrada no enum `componentName`.
 
 ### `lib/feature-layout.mjs`
 
@@ -96,14 +96,19 @@ Tradeoff: ~136px extra por flow-row (~544px para 4 fluxos). Aceitável dado que 
 
 ### `lib/render-manifest.mjs`
 
-- `buildFlowsNode`: cada `screen-slot` ganha um campo `justification: { x, y, width, height, text: '', pluginData: { role: 'screen-justification', flowId, screenIndex } }`.
-- `buildAnalysisOverviewNode`: itera sobre 5 sub-seções; `ANALYSIS_SECTION_HEADINGS['gap-check'] = 'Gap check'`; `ANALYSIS_SECTION_PLACEHOLDERS['gap-check']` define texto orientativo (ex.: "Run /meet-criteria-analyze to check ticket coverage.").
+- **Disambiguação de roles** (pré-requisito): hoje `screen.pluginData = { role: 'screen-slot', ... }` é passado tanto ao tag quanto ao screen clonado em `figma-render.mjs`. Para detecção sem ambiguidade no `/analyze`, separar em três `pluginData` distintas:
+  - tag node → `role: 'screen-tag'`
+  - cloned screen content → `role: 'screen-slot'` (mantém o nome — ele representa o "conteúdo do slot")
+  - justification text → `role: 'screen-justification'`
+  Todas carregam `flowId` + `screenIndex` para join.
+- `buildFlowsNode`: cada slot emite `tag.pluginData = { role: 'screen-tag', flowId, screenIndex }`, `slot.pluginData = { role: 'screen-slot', flowId, screenIndex }` (consumido por `cloneScreen`), e novo `justification: { x, y, width, height, text: '', pluginData: { role: 'screen-justification', flowId, screenIndex } }`.
+- `buildAnalysisOverviewNode`: itera sobre 5 sub-seções; `ANALYSIS_SECTION_HEADINGS['gap-check'] = 'Gap check'`; `ANALYSIS_SECTION_PLACEHOLDERS['gap-check']` define texto orientativo (ex.: "Run /meet-criteria-analyze to check ticket coverage."). Cada sub-seção emite `pluginData = { role: 'analysis-section', key }`.
 
 ### `lib/figma-render.mjs`
 
-- Helper de `screen-slot` cria adicionalmente um text node `screen-justification` em branco, com `TEXT_AUTO_RESIZE = HEIGHT`, largura travada, plugin data setada.
-- Helper de `analysis-overview` itera 5 sub-seções (loop existente — só um placeholder a mais).
-- Cada sub-seção carrega `pluginData.role = 'analysis-section'` + `pluginData.key` (`resolution` / `validation` / `attention` / `discussion` / `gap-check`).
+- `buildScreenNameTag` recebe `tag.pluginData` (não mais `screen.pluginData`) — assinatura ajustada.
+- Após o append do tag e do screen clonado, criar um text node `screen-justification` em branco posicionado em `screen.justification.x/y/width`, com `TEXT_AUTO_RESIZE = HEIGHT`, plugin data `screen.justification.pluginData`.
+- `buildAnalysisOverviewCard` itera 5 sub-seções (loop existente — só um placeholder a mais) e aplica `pluginData = { role: 'analysis-section', key }` no frame de cada sub-seção.
 
 ### Migração de deliverables antigos
 
@@ -249,8 +254,7 @@ Cada mensagem inclui sugestão de ação (mesmo padrão de `RenderInputError`).
 
 ### Modificados
 - `templates/feature.jsonc` — adiciona `gap-check` em `AnalysisOverview.sections`.
-- `schemas/template.schema.json` — enum `sections` aceita `gap-check`.
-- `lib/render-manifest.mjs` — emite `justification` em cada `screen-slot`; emite 5ª sub-seção `gap-check`; `ANALYSIS_SECTION_HEADINGS`/`ANALYSIS_SECTION_PLACEHOLDERS` ganham `gap-check`.
+- `lib/render-manifest.mjs` — disambigua roles (`screen-tag`, `screen-slot`, `screen-justification`); emite `justification` em cada slot; emite 5ª sub-seção `gap-check`; `ANALYSIS_SECTION_HEADINGS`/`ANALYSIS_SECTION_PLACEHOLDERS` ganham `gap-check`.
 - `lib/feature-layout.mjs` — novas constantes `JUSTIFICATION_HEIGHT` e `IPHONE_TO_JUSTIFICATION_GAP`; flow-row e section crescem.
 - `lib/figma-render.mjs` — cria text node `screen-justification` por slot; renderiza 5ª sub-seção; sub-seções carregam `pluginData.role='analysis-section'` + `pluginData.key`.
 - `lib/render-manifest.test.mjs`, `lib/figma-render.test.mjs`, `lib/feature-layout.test.mjs` — atualizados.
