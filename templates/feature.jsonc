@@ -42,7 +42,7 @@
       "id": "analysis-overview",
       "component": "AnalysisOverview",
       "required": true,
-      "sections": ["resolution", "validation", "attention", "discussion"]
+      "sections": ["resolution", "validation", "attention", "discussion", "gap-check"]
     }
   ],
 
