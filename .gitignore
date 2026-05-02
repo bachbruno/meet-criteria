@@ -23,3 +23,6 @@ pencil/
 # Superpowers/Claude scratch
 .superpowers/
 .claude/
+
+# Git worktrees for isolated implementation work
+.worktrees/
