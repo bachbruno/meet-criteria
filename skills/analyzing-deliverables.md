@@ -10,7 +10,7 @@ Orquestra `/meet-criteria-analyze [<slug>]` em 11 passos. Use os helpers em `lib
 4. Se a resposta for `{ found: true, ambiguous: true, candidates: [...] }`: use `AskUserQuestion` listando os `ticketRef`/`slug` candidatos.
 5. Se a resposta for `{ found: true, ambiguous: false, ... }`: use diretamente.
 
-## Passo 0.5 — Pré-flight check (informacional)
+## Passo 1.5 — Pré-flight check (informacional)
 
 Antes de gastar tokens, rode os checks determinísticos como pré-flight:
 
@@ -128,8 +128,8 @@ Após o screenshot final: se algo visualmente quebrado (text overflow, posiçõe
 | `FINAL_ANALYSIS_*` | Passo 8 (fatal) |
 | `GAP_CHECK_*` | Passo 9 (fatal) |
 | `MIGRATION_FAILED` | Passo 4 (fatal) |
-| `MALFORMED_SNAPSHOT` | Passo 0.5 (pré-flight, fatal — sectionId provavelmente stale) |
-| `SECTION_NOT_FOUND` | Passo 0.5 (pré-flight, fatal) |
+| `MALFORMED_SNAPSHOT` | Passo 1.5 (pré-flight, fatal — sectionId provavelmente stale) |
+| `SECTION_NOT_FOUND` | Passo 1.5 (pré-flight, fatal) |
 
 ## Idempotência
 

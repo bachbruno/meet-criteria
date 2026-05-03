@@ -1,5 +1,6 @@
 ---
 description: Roda checks determinísticos no deliverable Meet Criteria atual e oferece navegação até cada pendência
+argument-hint: "[<slug>] [--yes]"
 ---
 
 # /meet-criteria-check
