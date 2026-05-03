@@ -10,6 +10,25 @@ Orquestra `/meet-criteria-analyze [<slug>]` em 11 passos. Use os helpers em `lib
 4. Se a resposta for `{ found: true, ambiguous: true, candidates: [...] }`: use `AskUserQuestion` listando os `ticketRef`/`slug` candidatos.
 5. Se a resposta for `{ found: true, ambiguous: false, ... }`: use diretamente.
 
+## Passo 0.5 — Pré-flight check (informacional)
+
+Antes de gastar tokens, rode os checks determinísticos como pré-flight:
+
+1. `import { ANALYSIS_SECTION_PLACEHOLDERS } from '../lib/render-manifest.mjs'`
+2. `import { buildCheckSnapshotJs, runRules } from '../lib/check-helpers.mjs'`
+3. Monte `knownPlaceholders` (mesma regra da skill `checking-deliverables`).
+4. Gere e execute `buildCheckSnapshotJs({ sectionId, knownPlaceholders })`.
+5. `findings = runRules(snapshot)`.
+6. Comportamento por severidade:
+   - `0 findings` → silencie, prossiga.
+   - Só `warn` → imprima `ℹ️ N avisos detectados (rode /meet-criteria-check pra detalhes)` e prossiga.
+   - 1+ `error` → use `AskUserQuestion`:
+     - "Detectados N erros antes da análise. Continuar mesmo assim ou cancelar pra rodar /meet-criteria-check?"
+     - Opções: `["Continuar", "Cancelar"]`
+     - Em auto mode (`--yes`): imprima "⚠️ N erros detectados — prosseguindo em auto mode" e prossiga.
+
+Pré-flight é informacional. `/analyze` continua sendo o único command que escreve no Figma.
+
 ## Passo 2 — Carregar `problem-statement.md`
 
 Leia `.meet-criteria/<slug>/problem-statement.md` via Read. Se ausente ou vazio: aborte com mensagem orientando o usuário a (re)criar o deliverable via `/meet-criteria-new` ou colar manualmente o conteúdo.
@@ -109,6 +128,8 @@ Após o screenshot final: se algo visualmente quebrado (text overflow, posiçõe
 | `FINAL_ANALYSIS_*` | Passo 8 (fatal) |
 | `GAP_CHECK_*` | Passo 9 (fatal) |
 | `MIGRATION_FAILED` | Passo 4 (fatal) |
+| `MALFORMED_SNAPSHOT` | Passo 0.5 (pré-flight, fatal — sectionId provavelmente stale) |
+| `SECTION_NOT_FOUND` | Passo 0.5 (pré-flight, fatal) |
 
 ## Idempotência
 
