@@ -2,7 +2,7 @@
 
 Skills + figma-console MCP que ajudam designers de produto a conectar tickets de design a entregáveis no Figma — estruturando entregáveis, ancorando decisões e gerando narrativa pra apresentação.
 
-> **Status:** em construção. Planos 1, 2, 3 e 3.5 (Foundation + Setup & Onboarding + /meet-criteria-new + render Figma) implementados. Veja `docs/superpowers/plans/`.
+> **Status:** em construção. Planos 1, 2, 3, 3.5, 3.6 e 4 implementados (Foundation + Setup & Onboarding + /meet-criteria-new + render Figma + feature template rewrite + /meet-criteria-analyze). Veja `docs/superpowers/plans/`.
 
 ## Arquitetura em 1 parágrafo
 
@@ -33,21 +33,28 @@ meet-criteria/
 │   ├── slug.mjs              # normalização de ticket-ref pra kebab-case
 │   ├── template-loader.mjs   # carrega + valida templates/<type>.jsonc
 │   ├── visual-identity.mjs   # default vs auto-detect + overrides
+│   ├── layout-feature.mjs    # cálculo de layout do tipo feature
 │   ├── render-manifest.mjs   # plano declarativo de renderização
 │   ├── local-store.mjs       # bootstrap .meet-criteria/<slug>/
-│   └── figma-render.mjs      # template JS + buildRenderJs (figma_execute)
+│   ├── figma-render.mjs      # template JS + buildRenderJs (figma_execute)
+│   └── analyze-helpers.mjs   # validators + builders para /meet-criteria-analyze
 ├── scripts/
 │   ├── validate-templates.mjs
 │   ├── check-environment.mjs # diagnóstico de setup
 │   ├── init-config.mjs       # materializa config.json
 │   └── new-deliverable.mjs   # gera manifest + bootstrap local store
 ├── skills/
-│   ├── setup-helper.md       # orquestra os 6 passos do onboarding
-│   └── creating-templates.md # orquestra os 9 passos do /meet-criteria-new
+│   ├── setup-helper.md            # orquestra os 6 passos do onboarding
+│   ├── creating-templates.md      # orquestra os 9 passos do /meet-criteria-new
+│   └── analyzing-deliverables.md  # orquestra os 11 passos do /meet-criteria-analyze
 ├── commands/
 │   ├── meet-criteria-setup.md
-│   └── meet-criteria-new.md
-└── prompts/                  # (próximos planos)
+│   ├── meet-criteria-new.md
+│   └── meet-criteria-analyze.md
+└── prompts/
+    ├── analyze-screen.md          # justificativa por tela
+    ├── analyze-final.md           # 4 sub-seções da Analysis Overview
+    └── analyze-gap-check.md       # comparação ticket vs entregue
 ```
 
 ## Pré-requisitos
@@ -78,13 +85,20 @@ Com `setup_complete=true`, invoque no agente: `/meet-criteria-new feature` (ou `
 
 Detalhes: [`skills/creating-templates.md`](skills/creating-templates.md).
 
+## Analisando um entregável
+
+Depois que o designer colou as telas nos slots (via Paste-to-Replace), invoque `/meet-criteria-analyze` (ou `/meet-criteria-analyze <slug>`). A skill `analyzing-deliverables` conduz: detecta o deliverable, lista slots, mostra preview do custo, gera justificativa por tela (visão), análise final (4 sub-seções) e gap check vs ticket, e escreve tudo no Figma em uma chamada atômica. Adicione `--yes` para pular a confirmação.
+
+Detalhes: [`skills/analyzing-deliverables.md`](skills/analyzing-deliverables.md).
+
 ## Roadmap (planos restantes)
 
 1. ✅ Foundation — schema, templates, tokens, validador
 2. ✅ Setup & onboarding (`/meet-criteria-setup`)
 3. ✅ Geração de templates (`/meet-criteria-new`)
 3.5. ✅ Render Figma (helpers `create*` expandidos + loop de validação visual)
-4. ⏭ Análise IA (`/meet-criteria-analyze`)
+3.6. ✅ Feature template rewrite (firefly palette, Section root, multi-flow, English helpers)
+4. ✅ Análise IA (`/meet-criteria-analyze`)
 5. ⏭ Âncoras (`/meet-criteria-anchor`, `/meet-criteria-export-annotations`)
 6. ⏭ Checks determinísticos (`/meet-criteria-check`)
 
