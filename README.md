@@ -2,7 +2,7 @@
 
 Skills + figma-console MCP que ajudam designers de produto a conectar tickets de design a entregáveis no Figma — estruturando entregáveis, ancorando decisões e gerando narrativa pra apresentação.
 
-> **Status:** em construção. Planos 1, 2, 3, 3.5, 3.6 e 4 implementados (Foundation + Setup & Onboarding + /meet-criteria-new + render Figma + feature template rewrite + /meet-criteria-analyze). Veja `docs/superpowers/plans/`.
+> **Status:** em construção. Planos 1, 2, 3, 3.5, 3.6, 4 e 6 implementados (Foundation + Setup & Onboarding + /meet-criteria-new + render Figma + feature template rewrite + /meet-criteria-analyze + /meet-criteria-check). Plano 5 (Âncoras) deferido. Veja `docs/superpowers/plans/`.
 
 ## Arquitetura em 1 parágrafo
 
@@ -37,7 +37,8 @@ meet-criteria/
 │   ├── render-manifest.mjs   # plano declarativo de renderização
 │   ├── local-store.mjs       # bootstrap .meet-criteria/<slug>/
 │   ├── figma-render.mjs      # template JS + buildRenderJs (figma_execute)
-│   └── analyze-helpers.mjs   # validators + builders para /meet-criteria-analyze
+│   ├── analyze-helpers.mjs   # validators + builders para /meet-criteria-analyze
+│   └── check-helpers.mjs     # regras determinísticas + builders para /meet-criteria-check
 ├── scripts/
 │   ├── validate-templates.mjs
 │   ├── check-environment.mjs # diagnóstico de setup
@@ -46,11 +47,13 @@ meet-criteria/
 ├── skills/
 │   ├── setup-helper.md            # orquestra os 6 passos do onboarding
 │   ├── creating-templates.md      # orquestra os 9 passos do /meet-criteria-new
-│   └── analyzing-deliverables.md  # orquestra os 11 passos do /meet-criteria-analyze
+│   ├── analyzing-deliverables.md  # orquestra os 11 passos do /meet-criteria-analyze
+│   └── checking-deliverables.md   # orquestra os 6 passos do /meet-criteria-check
 ├── commands/
 │   ├── meet-criteria-setup.md
 │   ├── meet-criteria-new.md
-│   └── meet-criteria-analyze.md
+│   ├── meet-criteria-analyze.md
+│   └── meet-criteria-check.md
 └── prompts/
     ├── analyze-screen.md          # justificativa por tela
     ├── analyze-final.md           # 4 sub-seções da Analysis Overview
@@ -91,6 +94,12 @@ Depois que o designer colou as telas nos slots (via Paste-to-Replace), invoque `
 
 Detalhes: [`skills/analyzing-deliverables.md`](skills/analyzing-deliverables.md).
 
+## Verificando um entregável
+
+Antes de uma reunião ou de fechar o ticket, rode `/meet-criteria-check` (ou `/meet-criteria-check <slug>`) para uma varredura determinística (sem IA, read-only). A skill `checking-deliverables` aplica 6 regras (problem statement vazio, screen slot pristine, justificativa em branco, sub-seção vazia, texto placeholder não substituído, análise nunca rodada) e oferece lista navegável que centraliza o cursor do Figma na pendência escolhida.
+
+Detalhes: [`skills/checking-deliverables.md`](skills/checking-deliverables.md).
+
 ## Roadmap (planos restantes)
 
 1. ✅ Foundation — schema, templates, tokens, validador
@@ -99,8 +108,8 @@ Detalhes: [`skills/analyzing-deliverables.md`](skills/analyzing-deliverables.md)
 3.5. ✅ Render Figma (helpers `create*` expandidos + loop de validação visual)
 3.6. ✅ Feature template rewrite (firefly palette, Section root, multi-flow, English helpers)
 4. ✅ Análise IA (`/meet-criteria-analyze`)
-5. ⏭ Âncoras (`/meet-criteria-anchor`, `/meet-criteria-export-annotations`)
-6. ⏭ Checks determinísticos (`/meet-criteria-check`)
+5. ⏭ Âncoras (`/meet-criteria-anchor`, `/meet-criteria-export-annotations`) — deferido
+6. ✅ Checks determinísticos (`/meet-criteria-check`)
 
 ## Licença
 
